@@ -4,58 +4,153 @@ import sqlite3
 app = FastAPI()
 
 
+def get_connection():
+    return sqlite3.connect("data/developers.db")
+
+
 @app.get("/")
 def home():
-    return {"message": "LeadFinder API Running"}
+    return {
+        "message": "LeadFinder API Running"
+    }
+
+
+@app.get("/stats")
+def stats():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM developers")
+    total = cursor.fetchone()[0]
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM developers WHERE source='github'"
+    )
+    github_count = cursor.fetchone()[0]
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM developers WHERE source='devto'"
+    )
+    devto_count = cursor.fetchone()[0]
+
+    conn.close()
+
+    return {
+        "total_profiles": total,
+        "github_profiles": github_count,
+        "devto_profiles": devto_count
+    }
 
 
 @app.get("/search")
 def search(q: str):
 
-    conn = sqlite3.connect("data/developers.db")
-
+    conn = get_connection()
     cursor = conn.cursor()
 
-    search_term = f"%{q}%"
+    term = f"%{q}%"
 
     cursor.execute("""
-        SELECT
-            name,
-            username,
-            company,
-            location,
-            email,
-            linkedin,
-            github,
-            source
-        FROM developers
-        WHERE
-            name LIKE ?
-            OR bio LIKE ?
-            OR company LIKE ?
-        LIMIT 50
+    SELECT
+        name,
+        username,
+        role,
+        company,
+        location,
+        email,
+        linkedin,
+        github,
+        website,
+        source
+    FROM developers
+    WHERE
+        role LIKE ?
+        OR bio LIKE ?
+        OR company LIKE ?
+        OR location LIKE ?
+        OR username LIKE ?
+        OR name LIKE ?
+    ORDER BY
+        CASE
+            WHEN role LIKE ? THEN 1
+            WHEN bio LIKE ? THEN 2
+            ELSE 3
+        END
+    LIMIT 50
     """, (
-        search_term,
-        search_term,
-        search_term
+        term,
+        term,
+        term,
+        term,
+        term,
+        term,
+        term,
+        term
     ))
 
     rows = cursor.fetchall()
 
     conn.close()
 
-    results = []
-
-    for row in rows:
-        results.append({
+    return [
+        {
             "name": row[0],
             "username": row[1],
-            "company": row[2],
-            "location": row[3],
-            "email": row[4],
-            "linkedin": row[5],
-            "github": row[6],
-            "source": row[7]
-        })
+            "role": row[2],
+            "company": row[3],
+            "location": row[4],
+            "email": row[5],
+            "linkedin": row[6],
+            "github": row[7],
+            "website": row[8],
+            "source": row[9]
+        }
+        for row in rows
+    ]
 
-    return results
+
+@app.get("/search_role")
+def search_role(q: str):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    term = f"%{q}%"
+
+    cursor.execute("""
+    SELECT
+        name,
+        username,
+        role,
+        company,
+        location,
+        email,
+        linkedin,
+        github,
+        website,
+        source
+    FROM developers
+    WHERE role LIKE ?
+    LIMIT 50
+    """, (term,))
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return [
+        {
+            "name": row[0],
+            "username": row[1],
+            "role": row[2],
+            "company": row[3],
+            "location": row[4],
+            "email": row[5],
+            "linkedin": row[6],
+            "github": row[7],
+            "website": row[8],
+            "source": row[9]
+        }
+        for row in rows
+    ]

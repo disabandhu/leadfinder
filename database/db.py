@@ -8,6 +8,7 @@ def get_connection():
 
 
 def insert_developer(profile):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -16,27 +17,28 @@ def insert_developer(profile):
         source,
         username,
         name,
+        role,
         bio,
         company,
         location,
         email,
         linkedin,
         github,
-        website,
-        last_updated
+        website
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        profile.get("source"),
-        profile.get("username"),
-        profile.get("name"),
-        profile.get("bio"),
-        profile.get("company"),
-        profile.get("location"),
-        profile.get("email"),
-        profile.get("linkedin"),
-        profile.get("github"),
-        profile.get("website")
+        profile.get("source", ""),
+        profile.get("username", ""),
+        profile.get("name", ""),
+        profile.get("role", ""),
+        profile.get("bio", ""),
+        profile.get("company", ""),
+        profile.get("location", ""),
+        profile.get("email", ""),
+        profile.get("linkedin", ""),
+        profile.get("github", ""),
+        profile.get("website", "")
     ))
 
     conn.commit()
